@@ -1,0 +1,1 @@
+/home/admin/miniconda3/envs/easyFL/bin/python main.py --datafolderpath "../../../data/distributed/asia/m3_d1_n10" --dagpath "../../../data/distributed/asia/adj.txt"
