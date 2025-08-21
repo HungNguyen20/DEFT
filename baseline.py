@@ -4,17 +4,11 @@ import numpy as np
 from pathlib import Path
 import os
 from utils.utils import count_accuracy
-import bnlearn as bn
-from causallearn.utils.cit import fisherz , chisq
-from causallearn.search.ConstraintBased.FCI import fci
 from causallearn.search.ConstraintBased.PC import pc
 import time
-from cdt.causality.graph import GIES
-from SCORE.src.modules.algorithms.cd import DAS, SCORE
-from CausalDisco.baselines import var_sort_regress, r2_sort_regress
-from castle.algorithms import ICALiNGAM, DirectLiNGAM, GOLEM, GraNDAG, Notears, NotearsNonlinear, NotearsLowRank
-from castle.algorithms import PC 
-from castle.common.independence_tests import CITest
+from SCORE.src.modules.algorithms.cd import SCORE
+from CausalDisco.baselines import var_sort_regress
+from castle.algorithms import ICALiNGAM, GOLEM, GraNDAG
 
 os.environ['CASTLE_BACKEND'] = "pytorch"
 
@@ -25,12 +19,12 @@ def read_opts():
     parser.add_argument("--output", type=str, default="res.csv")
     parser.add_argument("--datatype", type=str, default="continuous", choices=["continuous", "discrete"])
     parser.add_argument("--repeat", type=int, default=1)
-    parser.add_argument("--routine", type=str, choices=["PC", "GES", "GIES", 
-                                                            "Notears", "NotearsNonlinear", "NotearsLowRank", "GOLEM",
-                                                            "DAS", "SCORE",
-                                                            "Varsort", "R2sort",
-                                                            "ICALiNGAM", "DirectLiNGAM",
-                                                            "GraNDAG"], default="PC")
+    parser.add_argument("--routine", type=str, choices=["PC", 
+                                                        "GOLEM",
+                                                        "SCORE",
+                                                        "Varsort",
+                                                        "ICALiNGAM",
+                                                        "GraNDAG"], default="PC")
     
     options = vars(parser.parse_args())
     return options
@@ -93,37 +87,6 @@ if __name__ == "__main__":
                 adj_mtx, _ = reformat_causal_graph(cg)
             
         
-        elif options["routine"] == "FCI":
-            g, edges = fci(data_df.to_numpy())
-            adj_mtx , _ = reformat_causal_graph(g)
-        
-        
-        elif options["routine"] == "GES":
-            model = bn.structure_learning.fit(data_df, methodtype='hc', verbose=0)
-            adj_mtx = model['adjmat'].to_numpy() * 1.0      # type:ignore
-            
-            
-        elif options['routine'] == "GIES":
-            obj = GIES()
-            output = obj.predict(data_df)
-            adj_mtx = np.zeros([d, d])
-            for edge in output.edges:     # type:ignore
-                source, target = edge
-                source_id = int(source[1:]) - 1
-                target_id = int(target[1:]) - 1
-                adj_mtx[source_id][target_id] = 1
-                if adj_mtx[target_id][source_id] == 1:
-                    adj_mtx[source_id][target_id] = 0
-                    adj_mtx[target_id][source_id] = 0
-        
-        
-        # elif options['routine'] == "DAS":
-        #     algorithm = DAS(data_df.to_numpy(), kwargs={'d': d, 'eta_G': 0.01, 'eta_H': 0.01, 
-        #                                             'cam_cutoff': 0.01, 'pruning': 'CAM', 'threshold': 0.01, 'K': 10})
-        #     adj_mtx = algorithm.inference()
-        #     adj_mtx = (adj_mtx > 0) * 1.
-            
-        
         elif options['routine'] == "SCORE":
             algorithm = SCORE(data_df.to_numpy(), kwargs={'d': d, 'eta_G': 0.01, 'eta_H': 0.01, 
                                                     'cam_cutoff': 0.01, 'pruning': 'DAS', 'threshold': 0.01, 'pns': 10})
@@ -134,37 +97,9 @@ if __name__ == "__main__":
         elif options['routine'] == "Varsort":
             adj_mtx = 1.0 * (var_sort_regress(data_df.to_numpy())!=0)
             
-            
-        elif options['routine'] == "R2sort":
-            adj_mtx = 1.0 * (r2_sort_regress(data_df.to_numpy())!=0)
-            
         
         if options['routine'] == 'ICALiNGAM':
             model = ICALiNGAM(thresh=0.3)
-            model.learn(data_df.to_numpy())
-            adj_mtx = model.causal_matrix
-            
-        
-        if options['routine'] == 'Notears':
-            model = Notears(w_threshold=0.3)
-            model.learn(data_df.to_numpy())
-            adj_mtx = model.causal_matrix
-            
-        
-        if options['routine'] == 'NotearsNonlinear':
-            model = NotearsNonlinear(w_threshold=0.3, device_type="gpu")
-            model.learn(data_df.to_numpy())
-            adj_mtx = model.causal_matrix
-            
-        
-        if options['routine'] == 'NotearsLowRank':
-            model = NotearsLowRank(w_threshold=0.3)
-            model.learn(data_df.to_numpy(), rank=int(d/10))
-            adj_mtx = model.causal_matrix
-            
-            
-        if options['routine'] == 'DirectLiNGAM':
-            model = DirectLiNGAM(thresh=0.3)
             model.learn(data_df.to_numpy())
             adj_mtx = model.causal_matrix
             
