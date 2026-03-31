@@ -4,7 +4,6 @@ import time
 from args import get_args
 import sys 
 import pandas as pd
-sys.path.append('/mnt/disk1/hieupcvp/VerticalCausalDiscovery')
 from utils.utils import count_accuracy
 from baseline import read_opts
 
