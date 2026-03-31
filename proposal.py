@@ -49,13 +49,11 @@ def separate_node_into_group(connection):
 
 
 def find_ancestor_of_group(connection, groups, groups_tau):
-    ancestor = {group: [] for group in groups}  # Khởi tạo ancestor
+    ancestor = {group: [] for group in groups}
     
     for group1 in groups:
         for group2 in groups:
-            # Kiểm tra điều kiện: tau của group1 nhỏ hơn group2, và group1 có kết nối với group2
             if groups_tau[group1] < groups_tau[group2]:
-                # Kiểm tra tất cả các node trong group1 có kết nối với bất kỳ node nào trong group2
                 if all(node1 in connection[groups[group2][0]] for node1 in connection[groups[group1][0]]):
                     ancestor[group2].append(group1)
     return ancestor
@@ -75,7 +73,7 @@ def find_group_causal_graph(oracle, ancestor, groups):
             # Step 2: For each c in child(p) ∩ ancestor(u)
             for c in set(child[anc]) & set(ancestor[group]):
                 C.add(c)
-                C.update(parent[c])  # Thêm parent(c) vào C
+                C.update(parent[c])  # parent(c) to C
             C.discard(anc)
             C.discard(group)
             # Step 3: Gather all nodes in groups of C
